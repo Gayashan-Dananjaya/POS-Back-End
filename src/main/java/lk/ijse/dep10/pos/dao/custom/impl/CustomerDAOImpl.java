@@ -1,39 +1,92 @@
 package lk.ijse.dep10.pos.dao.custom.impl;
 
-import lk.ijse.dep10.pos.dao.CrudDAOImpl;
 import lk.ijse.dep10.pos.dao.custom.CustomerDAO;
 import lk.ijse.dep10.pos.entity.Customer;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.NoResultException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
+import static lk.ijse.dep10.pos.dao.util.Mappers.CUSTOMER_ROW_MAPPER;
+
 @Repository
-public class CustomerDAOImpl extends CrudDAOImpl<Customer, Integer> implements CustomerDAO {
+public class CustomerDAOImpl implements CustomerDAO {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public CustomerDAOImpl(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @Override
+    public long count() throws Exception {
+        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM customer", Long.class);
+    }
+
+    @Override
+    public Customer save(Customer customer) throws Exception {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement stm = con.prepareStatement("INSERT INTO customer (name, address, contact) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            stm.setString(1, customer.getName());
+            stm.setString(2, customer.getAddress());
+            stm.setString(3, customer.getContact());
+            return stm;
+        }, keyHolder);
+        customer.setId(keyHolder.getKey().intValue());
+        return customer;
+    }
+
+    @Override
+    public void update(Customer customer) throws Exception {
+        jdbcTemplate.update("UPDATE customer SET name=?, address=?, contact=? WHERE id=?", customer.getName(), customer.getAddress(), customer.getContact(), customer.getId());
+    }
+
+    @Override
+    public void deleteById(Integer id) throws Exception {
+        jdbcTemplate.update("DELETE FROM customer WHERE id=?", id);
+    }
+
+    public Optional<Customer> findById(Integer id) throws Exception {
+        return Optional.ofNullable(jdbcTemplate.queryForObject("SELECT * FROM customer WHERE id=?", CUSTOMER_ROW_MAPPER, id));
+    }
+
+    public List<Customer> findAll() throws Exception {
+        return jdbcTemplate.query("SELECT * FROM customer", CUSTOMER_ROW_MAPPER);
+    }
+
+    public boolean existsById(Integer id) throws Exception {
+        return findById(id).isPresent();
+    }
+
     public List<Customer> findCustomers(String query) throws Exception {
         query = "%" + query + "%";
-        return entityManager.createQuery("SELECT c FROM Customer c WHERE str(c.id) LIKE ?1 OR c.name LIKE ?2 OR c.address LIKE ?3 OR c.contact LIKE ?4", Customer.class).setParameter(1, query).setParameter(2, query).setParameter(3, query).setParameter(4, query).getResultList();
-    }
-
-    @Override
-    public Optional<Customer> findCustomerByIdOrContact(String idOrContact) throws Exception {
-        try {
-            return Optional.of(entityManager.createQuery("SELECT c FROM Customer c WHERE str(c.id) LIKE ?1 OR c.contact LIKE ?2", Customer.class).setParameter(1, idOrContact).setParameter(2, idOrContact).getSingleResult());
-        }catch (NoResultException exp){
-            return Optional.empty();
-        }
-    }
-
-    @Override
-    public boolean existsCustomerByContactAndNotId(String contact, Integer id) throws Exception {
-        return !entityManager.createQuery("SELECT c FROM Customer c WHERE c.contact = :contact AND c.id != :id", Customer.class).setParameter("contact", contact).setParameter("id", id).getResultList().isEmpty();
+        return jdbcTemplate.query("SELECT * FROM customer WHERE id LIKE ? OR name LIKE ? OR address LIKE ? OR contact LIKE ?", CUSTOMER_ROW_MAPPER,
+                query, query, query, query);
     }
 
     @Override
     public boolean existsCustomerByContact(String contact) throws Exception {
-        return !entityManager.createQuery("SELECT c FROM Customer c WHERE c.contact = :contact", Customer.class).setParameter("contact", contact).getResultList().isEmpty();
+        return jdbcTemplate.queryForObject("SELECT * FROM customer WHERE contact=?",
+                CUSTOMER_ROW_MAPPER, contact) != null;
+    }
+
+    @Override
+    public boolean existsCustomerByContactAndNotId(String contact, Integer id) throws Exception {
+        return jdbcTemplate.queryForObject("SELECT * FROM customer WHERE contact = ? AND id <> ?",
+                CUSTOMER_ROW_MAPPER, contact, id) != null;
+    }
+
+    @Override
+    public Optional<Customer> findCustomerByIdOrContact(String idOrContact) throws Exception {
+        return Optional.ofNullable(jdbcTemplate
+                .queryForObject("SELECT * FROM customer WHERE id=? OR contact=?",
+                CUSTOMER_ROW_MAPPER, idOrContact, idOrContact));
     }
 }

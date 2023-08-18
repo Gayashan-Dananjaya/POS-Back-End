@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class ItemBOImpl implements ItemBO {
-
     private final ItemDAO itemDAO;
     private final OrderDetailDAO orderDetailDAO;
     private final Transformer transformer;
@@ -29,12 +28,9 @@ public class ItemBOImpl implements ItemBO {
 
     @Override
     public void saveItem(ItemDTO itemDTO) throws Exception {
-        if (itemDAO.existsById(itemDTO.getCode()))
-            throw new BusinessException(BusinessExceptionType.DUPLICATE_RECORD,
-                    "Save failed: Item code: " + itemDTO.getCode() + " already exists");
-
+        if (itemDAO.existsById(itemDTO.getCode())) throw new BusinessException(BusinessExceptionType.DUPLICATE_RECORD,
+                "Save failed: Item code: " + itemDTO.getCode() + " already exists");
         itemDAO.save(transformer.toItemEntity(itemDTO));
-
     }
 
     @Override
@@ -43,7 +39,6 @@ public class ItemBOImpl implements ItemBO {
             throw new BusinessException(BusinessExceptionType.RECORD_NOT_FOUND,
                     "Update failed: Item code: " + itemDTO.getCode() + " does not exist");
         itemDAO.update(transformer.toItemEntity(itemDTO));
-
     }
 
     @Override
@@ -56,7 +51,6 @@ public class ItemBOImpl implements ItemBO {
             throw new BusinessException(BusinessExceptionType.RECORD_NOT_FOUND,
                     "Delete failed: Item code: " + itemCode + " does not exist");
         itemDAO.deleteById(itemCode);
-
     }
 
     @Override

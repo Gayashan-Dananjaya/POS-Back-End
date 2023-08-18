@@ -4,11 +4,11 @@ import lk.ijse.dep10.pos.dto.ItemDTO;
 
 import java.util.List;
 
-public interface ItemBO {
+public interface ItemBO{
 
     void saveItem(ItemDTO itemDTO) throws Exception;
 
-    void updateItem(ItemDTO itemDTO) throws Exception;
+    void updateItem(ItemDTO itemDTO) throws  Exception;
 
     void deleteItemByCode(String itemCode) throws Exception;
 

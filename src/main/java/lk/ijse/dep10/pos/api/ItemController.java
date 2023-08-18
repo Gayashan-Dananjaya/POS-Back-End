@@ -3,6 +3,8 @@ package lk.ijse.dep10.pos.api;
 import lk.ijse.dep10.pos.business.custom.ItemBO;
 import lk.ijse.dep10.pos.dto.ItemDTO;
 import lk.ijse.dep10.pos.dto.util.ValidationGroups;
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +17,7 @@ import java.util.List;
 @RequestMapping("/api/v1/items")
 public class ItemController {
 
-    private final ItemBO itemBO;
+    private ItemBO itemBO;
 
     public ItemController(ItemBO itemBO) {
         this.itemBO = itemBO;

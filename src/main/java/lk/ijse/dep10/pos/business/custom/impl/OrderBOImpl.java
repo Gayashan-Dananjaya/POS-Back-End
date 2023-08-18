@@ -12,16 +12,14 @@ import lk.ijse.dep10.pos.entity.Item;
 import lk.ijse.dep10.pos.entity.Order;
 import lk.ijse.dep10.pos.entity.OrderCustomer;
 import lk.ijse.dep10.pos.entity.OrderDetail;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.sql.Timestamp;
 import java.util.List;
 
-@Service
-@Transactional
+@Component
 public class OrderBOImpl implements OrderBO {
-
     private final OrderDAO orderDAO;
     private final OrderDetailDAO orderDetailDAO;
     private final ItemDAO itemDAO;
@@ -30,8 +28,7 @@ public class OrderBOImpl implements OrderBO {
     private final QueryDAO queryDAO;
     private final Transformer transformer;
 
-    public OrderBOImpl(OrderDAO orderDAO, OrderDetailDAO orderDetailDAO,
-                       ItemDAO itemDAO, CustomerDAO customerDAO, OrderCustomerDAO orderCustomerDAO, QueryDAO queryDAO, Transformer transformer) {
+    public OrderBOImpl(OrderDAO orderDAO, OrderDetailDAO orderDetailDAO, ItemDAO itemDAO, CustomerDAO customerDAO, OrderCustomerDAO orderCustomerDAO, QueryDAO queryDAO, Transformer transformer) {
         this.orderDAO = orderDAO;
         this.orderDetailDAO = orderDetailDAO;
         this.itemDAO = itemDAO;
@@ -43,7 +40,6 @@ public class OrderBOImpl implements OrderBO {
 
     @Override
     public Integer placeOrder(OrderDTO orderDTO) throws Exception {
-
         /* First of all let's save the order */
         Order order = orderDAO.save(new Order(Timestamp.valueOf(orderDTO.getDateTime())));
 
@@ -60,7 +56,7 @@ public class OrderBOImpl implements OrderBO {
                         "Order failed: Provided customer data does not match");
 
             /* Okay everything seems fine with this customer, let's associate customer with the order then */
-            orderCustomerDAO.save(new OrderCustomer(order, transformer.toCustomerEntity(orderDTO.getCustomer())));
+            orderCustomerDAO.save(new OrderCustomer(order.getId(), orderDTO.getCustomer().getId()));
         }
 
         /* Let's save order details */
@@ -91,9 +87,7 @@ public class OrderBOImpl implements OrderBO {
             item.setQty(item.getQty() - itemDTO.getQty());
             itemDAO.update(item);
         }
-
         return order.getId();
-
     }
 
     @Override
